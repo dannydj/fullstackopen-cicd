@@ -34,3 +34,6 @@ jobs:
 
       - name: E2E tests
         run: npm run test:e2e
+
+      - name: Trigger deployment
+        run: curl --fail-with-body "${{ secrets.RENDER_DEPLOY_HOOK }}"
