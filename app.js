@@ -6,6 +6,14 @@ const PORT = process.env.PORT || 5001
 
 app.use(express.static('dist'))
 
+app.get('/version', (_request, response) => {
+  response.send('1')
+})
+
+app.get('/health', (_request, response) => {
+  response.send('ok')
+})
+
 const start = async () => {
   await app.listen(PORT)
 
