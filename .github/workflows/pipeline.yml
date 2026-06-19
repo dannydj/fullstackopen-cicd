@@ -51,7 +51,7 @@ jobs:
   tag_release:
     if: ${{ github.event_name == 'push' }}
     needs:
-      - simple_deplyment_pipeline
+      - simple_deployment_pipeline
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
