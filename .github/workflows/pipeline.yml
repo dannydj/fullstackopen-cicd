@@ -17,10 +17,11 @@ permissions:
 jobs:
   simple_deployment_pipeline:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
@@ -44,24 +45,75 @@ jobs:
       - name: E2E tests
         run: npm run test:e2e
 
-      - name: Trigger deployment
-        if: ${{ github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
-        run: curl --fail-with-body "${{ secrets.RENDER_DEPLOY_HOOK }}"
-
-  tag_release:
-    if: ${{ github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
+  deploy:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
     needs:
       - simple_deployment_pipeline
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger deployment
+        run: curl --fail-with-body "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+  tag_release:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
+    needs:
+      - deploy
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      
+
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: patch
           WITH_V: true
+
+  notify_success:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
+    needs:
+      - deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notify successful deployment
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: success
+          title: Pokedex deployment succeeded
+          description: |
+            A new version was deployed.
+
+            Repository: ${{ github.repository }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+
+  notify_failure:
+    if: ${{ always() && (needs.simple_deployment_pipeline.result == 'failure' || needs.deploy.result == 'failure' || needs.tag_release.result == 'failure') }}
+    needs:
+      - simple_deployment_pipeline
+      - deploy
+      - tag_release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notify failed pipeline
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: failure
+          title: Pokedex pipeline failed
+          description: |
+            The CI/CD pipeline failed.
+
+            Repository: ${{ github.repository }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+            Workflow: ${{ github.workflow }}
+            Run number: ${{ github.run_number }}
