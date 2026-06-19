@@ -52,7 +52,7 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     needs:
       - simple_deplyment_pipeline
-    runs_on: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
