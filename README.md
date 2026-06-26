@@ -16,5 +16,15 @@ Start by running `npm install` inside the project folder
 `npm run build` to make a production build
 `npm run start-prod` to run your production build
 
-## Deployed Application
+## Deployed Application (Pokedesk)
 https://fullstackopen-cicd-i4vv.onrender.com
+
+## Own application pipeline
+
+Phonebook repository:
+
+https://github.com/dannydj/fullstackopen-phonebook-cicd
+
+Deployed Phonebook:
+
+https://fullstackopen-phonebook-cicd.onrender.com
